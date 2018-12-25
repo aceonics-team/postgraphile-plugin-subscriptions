@@ -1,0 +1,26 @@
+{
+  "name": "postgraphile-plugin-subscriptions",
+  "version": "1.0.0-alpha.1",
+  "description": "Postgraphile plugin for adding subscriptions by default for all tables.",
+  "main": "index.js",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/JeetChaudhari/postgraphile-plugin-subscriptions.git"
+  },
+  "bugs": {
+    "url": "https://github.com/JeetChaudhari/postgraphile-plugin-subscriptions/issues"
+  },
+  "homepage": "https://github.com/JeetChaudhari/postgraphile-plugin-subscriptions",
+  "author": "Jeet Chaudhari <jeet@aceonics.com>",
+  "license": "MIT",
+  "dependencies": {
+    "graphile-utils": "^4.2.0",
+    "graphql-subscriptions": "^1.0.0"
+  },
+  "peerDependencies": {
+    "@graphile/operation-hooks": "^0.2.0"
+  },
+  "files": [
+    "src"
+  ]
+}
