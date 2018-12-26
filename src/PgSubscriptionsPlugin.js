@@ -34,7 +34,7 @@ const AddMutationTriggersOperationHook = build => fieldContext => {
 
   if (!isRootMutation) return null;
 
-  let mutationType, previousUser, currentUser;
+  let mutationType, previousRecord, currentRecord;
 
   if (isPgCreateMutationField) {
     mutationType = 'CREATED';
@@ -55,9 +55,9 @@ const AddMutationTriggersOperationHook = build => fieldContext => {
     },
   }));
 
-  const getPreviousUser = async (input, args, context, resolveInfo) => {
+  const getpreviousRecord = async (input, args, context, resolveInfo) => {
     if (isPgCreateMutationField) {
-      previousUser = null;
+      previousRecord = null;
       return input;
     } else {
       const { rows: [row] } = await context.pgClient.query(
@@ -66,33 +66,33 @@ const AddMutationTriggersOperationHook = build => fieldContext => {
         `select * from ${table.namespaceName}.${table.name} where id = $1`,
         [args.input.id]
       );
-      previousUser = row;
+      previousRecord = row;
     }
 
     return input;
   };
 
-  const getCurrentUser = async (input, args, context, resolveInfo) => {
+  const getcurrentRecord = async (input, args, context, resolveInfo) => {
     const relatedNodeId = input.data.__RelatedNodeId;
     if (isPgDeleteMutationField) {
-      currentUser = null;
+      currentRecord = null;
     } else {
       const { rows: [row] } = await context.pgClient.query(
         // TODO: Check if we can avoid using * in query
         `select * from ${table.namespaceName}.${table.name} where id = $1`,
         [relatedNodeId]
       );
-      currentUser = row;
+      currentRecord = row;
     }
 
     const payload = {
       clientMutationId: input.clientMutationId,
       mutationType,
       relatedNodeId,
-      currentUser,
-      previousUser,
-      changedFields: (currentUser && previousUser) ?
-        Object.keys(currentUser).filter(k => currentUser[k] !== previousUser[k]) : []
+      currentRecord,
+      previousRecord,
+      changedFields: (currentRecord && previousRecord) ?
+        Object.keys(currentRecord).filter(k => currentRecord[k] !== previousRecord[k]) : []
     };
 
     // TODO: Check whether creating multiple channels for filter is correct approach or not
@@ -106,13 +106,13 @@ const AddMutationTriggersOperationHook = build => fieldContext => {
     before: [
       {
         priority: 500,
-        callback: getPreviousUser,
+        callback: getpreviousRecord,
       },
     ],
     after: [
       {
         priority: 500,
-        callback: getCurrentUser,
+        callback: getcurrentRecord,
       },
     ],
     error: [],
@@ -216,14 +216,14 @@ const AddSubscriptionsPugin = (builder) => {
                   description: `The current value of \`${tableTypeName}\`.`,
                   type: tableType,
                   resolve(data) {
-                    return data.currentUser;
+                    return data.currentRecord;
                   },
                 },
                 previousValues: {
                   description: `The previous value of \`${tableTypeName}\`.`,
                   type: tableType,
                   resolve(data) {
-                    return data.previousUser;
+                    return data.previousRecord;
                   },
                 },
                 changedFields: {
