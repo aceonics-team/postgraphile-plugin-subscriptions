@@ -1,6 +1,6 @@
 const pubSub = require("./pubsub");
 
-const PgOnEventSubscriptionsPlugin = (builder) => {
+const PgSubscriptionByEventPlugin = (builder) => {
   builder.hook('GraphQLObjectType:fields', (fields, build, hookContext) => {
     const {
       extend,
@@ -163,4 +163,4 @@ const PgOnEventSubscriptionsPlugin = (builder) => {
   });
 };
 
-module.exports = PgOnEventSubscriptionsPlugin;
+module.exports = PgSubscriptionByEventPlugin;
