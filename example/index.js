@@ -15,7 +15,7 @@ async function main() {
     'public',
     {
       appendPlugins: [
-        OperationHooksPlugin,
+        // OperationHooksPlugin,
         PgSubscriptionsPlugin
       ],
     }

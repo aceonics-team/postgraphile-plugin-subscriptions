@@ -1,6 +1,6 @@
 const { makePluginByCombiningPlugins } = require("graphile-utils");
 const AddMutationTypePlugin = require('./addMutationTypePlugin');
-const AddMutationTriggersPlugin = require('./addMutationTriggersplugin');
+const AddMutationTriggersPlugin = require('./addMutationTriggersPlugin');
 const AddSubscriptionsPlugin = require('./addSubscriptionsPlugin');
 
 const PgSubscriptionsPlugin = makePluginByCombiningPlugins(
