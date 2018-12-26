@@ -46,6 +46,7 @@ const AddMutationTriggersPlugin = (builder) => {
       ...field,
 
       async resolve(_mutation, args, context, info) {
+        console.log('hello');
         if (isPgCreateMutationField) {
           previousRecord = null;
         } else {
@@ -61,6 +62,8 @@ const AddMutationTriggersPlugin = (builder) => {
         const oldResolveResult = await oldResolve(_mutation, args, context, info);
         
         const { relatedNodeId: __RelatedNodeId } = oldResolveResult.data;
+        console.log(oldResolveResult);
+        console.log(relatedNodeId);
         if (isPgDeleteMutationField) {
           currentRecord = null;
         } else {
