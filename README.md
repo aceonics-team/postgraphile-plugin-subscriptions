@@ -19,7 +19,7 @@ With each mutation on table subscription returns following graphql result
 ## Install
 For npm
 ```
-npm install postgraphile-plugin-subscriptions @graphile/operation-hooks --save
+npm install postgraphile-plugin-subscriptions --save
 ```
 For yarn
 ```
