@@ -1,7 +1,7 @@
 # Postgraphile Subscription Plugin
 
 This plugin adds a subscription by default per table in your postGraphile schema; e.g.
-`user` table gets subscription as `onUserMutation`. This plugin is not dependent on `@graphile/supporter` or `@graphile/pro` package. It uses `graphql-subscriptions` and `@graphile/operation-hooks` internally. 
+`user` table gets subscription as `onUserMutation`. This plugin is not dependent on `@graphile/supporter` or `@graphile/pro` package. It uses `graphql-subscriptions` internally. 
 
 Currently it can be used with apollo-server, as it has in built subscriptions. Check out example for more info. 
 
@@ -23,7 +23,7 @@ npm install postgraphile-plugin-subscriptions @graphile/operation-hooks --save
 ```
 For yarn
 ```
-yarn add postgraphile-plugin-subscriptions @graphile/operation-hooks
+yarn add postgraphile-plugin-subscriptions
 ```
 
 ## Usage
@@ -48,7 +48,6 @@ CREATE TABLE "users"(
 const pg = require("pg");
 const { ApolloServer } = require("apollo-server");
 const { makeSchemaAndPlugin } = require("postgraphile-apollo-server");
-const { OperationHooksPlugin } = require("@graphile/operation-hooks");
 const PgSubscriptionsPlugin = require("postgraphile-plugin-subscriptions");
 
 const pgPool = new pg.Pool({
@@ -61,7 +60,6 @@ async function main() {
     'public',
     {
       appendPlugins: [
-        OperationHooksPlugin,
         PgSubscriptionsPlugin
       ],
     }

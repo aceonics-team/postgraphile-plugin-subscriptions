@@ -17,9 +17,6 @@
     "graphile-utils": "^4.2.0",
     "graphql-subscriptions": "^1.0.0"
   },
-  "peerDependencies": {
-    "@graphile/operation-hooks": "^0.2.0"
-  },
   "files": [
     "src"
   ]
