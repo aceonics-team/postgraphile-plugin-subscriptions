@@ -127,7 +127,7 @@ const AddMutationTriggersPlugin = (builder) => {
   });
 };
 
-const AddSubscriptionsPugin = (builder) => {
+const AddSubscriptionsPlugin = (builder) => {
   builder.hook('GraphQLObjectType:fields', (fields, build, hookContext) => {
     const {
       extend,
@@ -293,7 +293,7 @@ const AddSubscriptionsPugin = (builder) => {
 const PgSubscriptionsPlugin = makePluginByCombiningPlugins(
   AddMutationTypePlugin,
   AddMutationTriggersPlugin,
-  AddSubscriptionsPugin,
+  AddSubscriptionsPlugin,
   // TODO: Create and Add live queries plugin (NotYetImplementd)
 );
 module.exports = PgSubscriptionsPlugin;
