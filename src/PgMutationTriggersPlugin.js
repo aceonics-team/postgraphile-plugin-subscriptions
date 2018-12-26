@@ -98,11 +98,9 @@ const PgMutationTriggersPlugin = (builder) => {
 
         // TODO: Check whether creating multiple channels for filter is correct approach or not
         pubSub.publish(`postgraphile:${table.name}`, payload);
-        console.log('published on ' + `postgraphile:${table.name}`);
         if (!isPgCreateMutationField) {
           uniqueKeyColumns.forEach(key => {
             pubSub.publish(`postgraphile:${table.name}:${key}:${previousRecord[key]}`, payload);
-            console.log('published on ' + `postgraphile:${table.name}:${key}:${previousRecord[key]}`);
           });
         }
 
