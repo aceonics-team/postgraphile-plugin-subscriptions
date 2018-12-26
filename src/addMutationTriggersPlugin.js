@@ -7,7 +7,6 @@ const AddMutationTriggersPlugin = (builder) => {
     const {
       scope: {
         isRootMutation,
-        fieldName,
         pgFieldIntrospection: table,
         isPgCreateMutationField,
         isPgUpdateMutationField,
