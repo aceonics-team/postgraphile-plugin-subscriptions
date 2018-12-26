@@ -1,1 +1,1 @@
-module.exports = require('./src/pgSubscriptionsPlugin');
+module.exports = require('./src/tmp');

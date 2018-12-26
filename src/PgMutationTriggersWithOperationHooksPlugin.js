@@ -1,6 +1,6 @@
 const pubSub = require("./pubsub");
 
-const AddMutationTriggersOperationHook = build => fieldContext => {
+const PgMutationTriggersOperationHook = build => fieldContext => {
   const {
     pgSql: sql,
   } = build;
@@ -105,12 +105,12 @@ const AddMutationTriggersOperationHook = build => fieldContext => {
   };
 };
 
-const AddMutationTriggersPlugin = (builder) => {
+const PgMutationTriggersWithOperationHooksPlugin = (builder) => {
   builder.hook("init", (_, build) => {
-    build.addOperationHook(AddMutationTriggersOperationHook(build));
+    build.addOperationHook(PgMutationTriggersOperationHook(build));
 
     return _;
   });
 };
 
-module.exports = AddMutationTriggersPlugin;
+module.exports = PgMutationTriggersWithOperationHooksPlugin;

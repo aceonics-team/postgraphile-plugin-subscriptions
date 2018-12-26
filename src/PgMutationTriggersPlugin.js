@@ -1,6 +1,6 @@
 const pubSub = require("./pubsub");
 
-const AddMutationTriggersPlugin = (builder) => {
+const PgMutationTriggersPlugin = (builder) => {
   builder.hook('GraphQLObjectType:fields:field', (field, build, hookContext) => {
     const { pgSql: sql } = build;
 
@@ -93,4 +93,4 @@ const AddMutationTriggersPlugin = (builder) => {
   });
 };
 
-module.exports = AddMutationTriggersPlugin;
+module.exports = PgMutationTriggersPlugin;

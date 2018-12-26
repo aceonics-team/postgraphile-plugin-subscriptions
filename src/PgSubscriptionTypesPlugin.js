@@ -1,6 +1,6 @@
 const { makeExtendSchemaPlugin, gql } = require("graphile-utils");
 
-const AddMutationTypePlugin = makeExtendSchemaPlugin(build => {
+const PgSubscriptionTypesPlugin = makeExtendSchemaPlugin(build => {
   return {
     typeDefs: gql`
       enum MutationType {
@@ -13,4 +13,4 @@ const AddMutationTypePlugin = makeExtendSchemaPlugin(build => {
   };
 });
 
-module.exports = AddMutationTypePlugin;
+module.exports = PgSubscriptionTypesPlugin;
