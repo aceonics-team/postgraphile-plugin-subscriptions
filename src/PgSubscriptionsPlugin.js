@@ -1,16 +1,18 @@
 const { makePluginByCombiningPlugins } = require("graphile-utils");
 const PgSubscriptionTypesPlugin = require('./PgSubscriptionTypesPlugin');
-const PgSubscriptionBasicsPlugin = require('./PgSubscriptionBasicsPlugin');
+const PgSubscriptionInflectionPlugin = require('./PgSubscriptionInflectionPlugin');
+// const PgOnMutationPayloadPlugin = require('./PgOnMutationPayloadPlugin');
 const PgMutationTriggersPlugin = require('./PgMutationTriggersPlugin');
-const PgSubscriptionByEventPlugin = require('./PgSubscriptionByEventPlugin');
-const PgSubscriptionByUniqueConstraintPlugin = require('./PgSubscriptionByUniqueConstraintPlugin');
+const PgSubscriptionAllRowsPlugin = require('./PgSubscriptionAllRowsPlugin');
+const PgSubscriptionRowByUniqueConstraintPlugin = require('./PgSubscriptionRowByUniqueConstraintPlugin');
 
 const PgSubscriptionsPlugin = makePluginByCombiningPlugins(
   PgSubscriptionTypesPlugin,
-  PgSubscriptionBasicsPlugin,
+  PgSubscriptionInflectionPlugin,
+  // PgOnMutationPayloadPlugin,
   PgMutationTriggersPlugin,
-  PgSubscriptionByEventPlugin,
-  PgSubscriptionByUniqueConstraintPlugin
+  PgSubscriptionAllRowsPlugin,
+  PgSubscriptionRowByUniqueConstraintPlugin
   // TODO: Create and Add live queries plugin (NotYetImplementd)
 );
 

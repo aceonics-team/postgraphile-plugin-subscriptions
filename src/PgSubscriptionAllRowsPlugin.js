@@ -8,11 +8,9 @@ const PgSubscriptionByEventPlugin = (builder) => {
       newWithHooks,
       pgIntrospectionResultsByKind,
       graphql: {
-        GraphQLInputObjectType,
         GraphQLObjectType,
         GraphQLString,
         GraphQLList,
-        GraphQLID,
         GraphQLNonNull
       },
       inflection,
@@ -32,30 +30,8 @@ const PgSubscriptionByEventPlugin = (builder) => {
         const tableName = inflection.tableFieldName(table);
         const tableTypeName = inflection.tableType(table);
         const tableType = getTypeByName(tableTypeName);
-
-        // const InputType = newWithHooks(
-        //   GraphQLInputObjectType,
-        //   {
-        //     name: `${tableTypeName}SubscriptionCondition`,
-        //     description: `All input for the subscribing \`${tableTypeName}\` changes.`,
-        //     fields: {
-        //       // TODO: subscription should support complete filter options just like prisma. 
-        //       id: {
-        //         description: `The globally unique \`ID\` which will identify a single \`${tableTypeName}\` for subscribing.`,
-        //         type: GraphQLID,
-        //       },
-        //       // TODO: Add filter for mutation_in (NotYetImplemented)
-        //       // mutation_in: {
-        //       //   description: `Mutation types to listen \`${tableTypeName}\` subscription.`,
-        //       //   type: new GraphQLList(getTypeByName('MutationType')),
-        //       // },
-        //     },
-        //   },
-        //   {
-        //     pgInflection: table,
-        //   }
-        // ); 
-
+        const fieldName = inflection.allSubscriptionRows(table);
+        
         const PayloadType = newWithHooks(
           GraphQLObjectType,
           {
@@ -76,13 +52,6 @@ const PgSubscriptionByEventPlugin = (builder) => {
                   type: new GraphQLNonNull(getTypeByName('MutationType')),
                   resolve(data) {
                     return data.mutationType;
-                  },
-                },
-                relatedNodeId: {
-                  description: 'ID of the mutated record',
-                  type: new GraphQLNonNull(getTypeByName('ID')),
-                  resolve(data) {
-                    return data.relatedNodeId;
                   },
                 },
                 [tableName]: {
@@ -114,20 +83,17 @@ const PgSubscriptionByEventPlugin = (builder) => {
           },
         );
 
-        const subscriptionName = `on${tableTypeName}Mutation`;
         memo = build.extend(
           memo,
           {
-            [subscriptionName]: fieldWithHooks(
-              subscriptionName,
+            [fieldName]: fieldWithHooks(
+              fieldName,
               context => {
                 return {
                   description: `Subscribes mutations on \`${tableTypeName}\`.`,
                   type: PayloadType,
                   subscribe: () => pubSub.asyncIterator(`postgraphile:${tableName}`),
                   resolve: (data) => {
-                    // TODO: Check if we can skip returning data depending on filters, 
-                    // instead of creating separate channel per filter as done now for id 
                     return data
                   },
                 };

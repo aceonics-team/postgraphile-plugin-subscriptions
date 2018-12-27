@@ -5,16 +5,9 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
     const {
       extend,
       getTypeByName,
-      newWithHooks,
       pgIntrospectionResultsByKind,
-      pgGetGqlTypeByTypeIdAndModifier,
       pgGetGqlInputTypeByTypeIdAndModifier,
       graphql: {
-        GraphQLInputObjectType,
-        GraphQLObjectType,
-        GraphQLString,
-        GraphQLList,
-        GraphQLID,
         GraphQLNonNull
       },
       inflection,
@@ -33,71 +26,12 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
 
         const tableName = inflection.tableFieldName(table);
         const tableTypeName = inflection.tableType(table);
-        const TableType = pgGetGqlTypeByTypeIdAndModifier(table.type.id, null);
 
         const uniqueConstraints = table.constraints.filter(
           con => con.type === "u" || con.type === "p"
         );
 
         uniqueConstraints.forEach(constraint => {
-          const PayloadType = newWithHooks(
-            GraphQLObjectType,
-            {
-              name: `Subscription${tableTypeName}Payload`,
-              description: `The output of our \`${tableTypeName}\` subscription.`,
-              fields: () => {
-                return {
-                  clientMutationId: {
-                    description:
-                      "The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.",
-                    type: GraphQLString,
-                    resolve(data) {
-                      return data.clientMutationId;
-                    },
-                  },
-                  mutation: {
-                    description: 'Type of mutation occured',
-                    type: new GraphQLNonNull(getTypeByName('MutationType')),
-                    resolve(data) {
-                      return data.mutationType;
-                    },
-                  },
-                  relatedNodeId: {
-                    description: 'ID of the mutated record',
-                    type: new GraphQLNonNull(getTypeByName('ID')),
-                    resolve(data) {
-                      return data.relatedNodeId;
-                    },
-                  },
-                  [tableName]: {
-                    description: `The current value of \`${tableTypeName}\`.`,
-                    type: tableType,
-                    resolve(data) {
-                      return data.currentRecord;
-                    },
-                  },
-                  previousValues: {
-                    description: `The previous value of \`${tableTypeName}\`.`,
-                    type: tableType,
-                    resolve(data) {
-                      return data.previousRecord;
-                    },
-                  },
-                  changedFields: {
-                    description: `List of fields changed in mutation of \`${tableTypeName}\`.`,
-                    type: new GraphQLNonNull(new GraphQLList(getTypeByName('String'))),
-                    resolve(data) {
-                      return data.changedFields;
-                    }
-                  }
-                };
-              },
-            },
-            {
-              pgIntrospection: table,
-            },
-          );
-
           const keys = constraint.keyAttributes;
           const fieldName = inflection.subscriptionRowByUniqueKeys(
             keys,
@@ -110,7 +44,7 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
             context => {
               return {
                 description: `Subscribes mutations on \`${tableTypeName}\`.`,
-                type: PayloadType,
+                type: getTypeByName(`${tableTypeName}SubscriptionPayload`),
                 args: keys.reduce((memo, key) => {
                   const InputType = pgGetGqlInputTypeByTypeIdAndModifier(
                     key.typeId,

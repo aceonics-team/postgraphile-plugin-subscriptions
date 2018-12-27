@@ -1,21 +1,21 @@
-const PgSubscriptionBasicsPlugin = (builder) => {
+const PgSubscriptionInflectionPlugin = (builder) => {
   builder.hook("inflection", (inflection, build) => {
     return build.extend(
       inflection,
       {
         allSubscriptionRows(table) {
           return this.camelCase(
-            `on-all-${this.pluralize(this._singularizedTableName(table))}`
+            `on-all-${this.pluralize(this._singularizedTableName(table))}-mutation`
           );
         },
         allSubscriptionRowsSimple(table) {
           return this.camelCase(
-            `on-all-${this.pluralize(this._singularizedTableName(table))}-list`
+            `on-all-${this.pluralize(this._singularizedTableName(table))}-list-mutation`
           );
         },
         subscriptionRow(table) {
           return this.camelCase(
-            `on-${this._singularizedTableName(table)}`
+            `on-${this._singularizedTableName(table)}-mutation`
           );
         },
         subscriptionRowByUniqueKeys(
@@ -27,7 +27,7 @@ const PgSubscriptionBasicsPlugin = (builder) => {
             return constraint.tags.fieldName;
           }
           return this.camelCase(
-            `on-${this._singularizedTableName(table)}-by-${detailedKeys
+            `on-${this._singularizedTableName(table)}-mutation-by-${detailedKeys
               .map(key => this.column(key))
               .join("-and-")}`
           );
@@ -37,4 +37,4 @@ const PgSubscriptionBasicsPlugin = (builder) => {
   });
 };
 
-module.exports = PgSubscriptionBasicsPlugin;
+module.exports = PgSubscriptionInflectionPlugin;
