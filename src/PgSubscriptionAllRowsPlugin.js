@@ -33,33 +33,33 @@ const PgSubscriptionByEventPlugin = (builder) => {
         const tableTypeName = inflection.tableType(table);
         const tableType = getTypeByName(tableTypeName);
 
-        const InputType = newWithHooks(
-          GraphQLInputObjectType,
-          {
-            name: `${tableTypeName}SubscriptionCondition`,
-            description: `All input for the subscribing \`${tableTypeName}\` changes.`,
-            fields: {
-              // TODO: subscription should support complete filter options just like prisma. 
-              id: {
-                description: `The globally unique \`ID\` which will identify a single \`${tableTypeName}\` for subscribing.`,
-                type: GraphQLID,
-              },
-              // TODO: Add filter for mutation_in (NotYetImplemented)
-              mutation_in: {
-                description: `Mutation types to listen \`${tableTypeName}\` subscription.`,
-                type: new GraphQLList(getTypeByName('MutationType')),
-              },
-            },
-          },
-          {
-            pgInflection: table,
-          }
-        );
+        // const InputType = newWithHooks(
+        //   GraphQLInputObjectType,
+        //   {
+        //     name: `${tableTypeName}SubscriptionCondition`,
+        //     description: `All input for the subscribing \`${tableTypeName}\` changes.`,
+        //     fields: {
+        //       // TODO: subscription should support complete filter options just like prisma. 
+        //       id: {
+        //         description: `The globally unique \`ID\` which will identify a single \`${tableTypeName}\` for subscribing.`,
+        //         type: GraphQLID,
+        //       },
+        //       // TODO: Add filter for mutation_in (NotYetImplemented)
+        //       // mutation_in: {
+        //       //   description: `Mutation types to listen \`${tableTypeName}\` subscription.`,
+        //       //   type: new GraphQLList(getTypeByName('MutationType')),
+        //       // },
+        //     },
+        //   },
+        //   {
+        //     pgInflection: table,
+        //   }
+        // ); 
 
         const PayloadType = newWithHooks(
           GraphQLObjectType,
           {
-            name: `Subscribe${tableTypeName}Payload`,
+            name: `${tableTypeName}SubscriptionPayload`,
             description: `The output of our \`${tableTypeName}\` subscription.`,
             fields: () => {
               return {
@@ -124,25 +124,7 @@ const PgSubscriptionByEventPlugin = (builder) => {
                 return {
                   description: `Subscribes mutations on \`${tableTypeName}\`.`,
                   type: PayloadType,
-                  args: {
-                    input: {
-                      type: InputType,
-                    },
-                  },
-                  subscribe: (...subscribeParams) => {
-                    // TODO: Check if this is correct place to implement filter with multiple channels.
-                    const RESOLVE_ARGS_INDEX = 1;
-                    // TODO: mutation_in is still not working (NotYetImplemented)
-                    const { input } = subscribeParams[
-                      RESOLVE_ARGS_INDEX
-                    ];
-                    let topic = `postgraphile:${tableName}`;
-                    if (input && input.id) {
-                      topic += `:${input.id}`;
-                    }
-
-                    return pubSub.asyncIterator(topic);
-                  },
+                  subscribe: () => pubSub.asyncIterator(`postgraphile:${tableName}`),
                   resolve: (data) => {
                     // TODO: Check if we can skip returning data depending on filters, 
                     // instead of creating separate channel per filter as done now for id 
