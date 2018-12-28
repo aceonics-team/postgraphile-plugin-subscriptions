@@ -30,6 +30,7 @@ yarn add postgraphile-plugin-subscriptions
 ## Usage
 
 ### Postgres Database
+Create table
 ```
 CREATE TABLE "users"(
   "id" UUID PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -45,6 +46,7 @@ CREATE TABLE "users"(
 ```
 
 ### Server
+Create apollo server and add postgraphile schema
 ```
 const pg = require("pg");
 const { ApolloServer } = require("apollo-server");
@@ -84,7 +86,7 @@ main().catch(e => {
 ```
 
 ### Client or GraphQL Playground
-Subscribe to onUserMutation
+Subscribe to onAllUsersMutation (this will be triggered when any user is created, updated or deleted)
 ```
 subscription {
   onAllUsersMutation {
@@ -135,7 +137,7 @@ Subscription Output
 ```
 {
   "data": {
-    "onUserMutation": {
+    "onAllUsersMutation": {
       "clientMutationId": "my_custom_mutation_id",
       "mutation": "UPDATED",
       "user": {
@@ -165,6 +167,7 @@ Subscription Output
 ```
 
 ### Subscribing to specific record
+This will trigger only if user with email "jen@example.com" is updated or deleted.
 ```
 subscription {
   onUserMutationByEmail(email:"jen@example.com") {
@@ -192,6 +195,7 @@ subscription {
 ```
 
 ### Subscribing to specific events
+This will trigger if any user is created or updated, but not if deleted.
 ```
 subscription {
   onUserMutationByEmail(mutation_in: [
@@ -222,6 +226,7 @@ subscription {
 ```
 
 ### Subscribing to specific events of specific record
+This will only trigger when user with id "e673ad33-dbd7-45a7-b272-3fefa25b4cba" is updated.
 ```
 subscription {
   onUserMutationByEmail(id: "e673ad33-dbd7-45a7-b272-3fefa25b4cba", mutation_in: [
