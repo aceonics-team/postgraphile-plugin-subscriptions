@@ -2,8 +2,6 @@ const pubSub = require("./pubsub");
 
 const PgMutationTriggersPlugin = (builder) => {
   builder.hook('GraphQLObjectType:fields:field', (field, build, hookContext) => {
-    const { pgSql: sql } = build;
-
     const {
       scope: {
         isRootMutation,
