@@ -6,13 +6,18 @@ const PgSubscriptionByEventPlugin = (builder) => {
       extend,
       getTypeByName,
       newWithHooks,
+      parseResolveInfo,
       pgIntrospectionResultsByKind,
+      pgGetGqlTypeByTypeIdAndModifier,
+      gql2pg,
+      pgSql: sql,
       graphql: {
         GraphQLObjectType,
         GraphQLString,
         GraphQLList,
         GraphQLNonNull
       },
+      pgQueryFromResolveData: queryFromResolveData,
       inflection,
     } = build;
 
@@ -29,9 +34,13 @@ const PgSubscriptionByEventPlugin = (builder) => {
 
         const tableName = inflection.tableFieldName(table);
         const tableTypeName = inflection.tableType(table);
-        const tableType = getTypeByName(tableTypeName);
+        const tableType = pgGetGqlTypeByTypeIdAndModifier(table.type.id, null);
         const fieldName = inflection.allSubscriptionRows(table);
-        
+        const sqlFullTableName = sql.identifier(
+          table.namespace.name,
+          table.name
+        );
+
         const PayloadType = newWithHooks(
           GraphQLObjectType,
           {
@@ -88,12 +97,53 @@ const PgSubscriptionByEventPlugin = (builder) => {
           {
             [fieldName]: fieldWithHooks(
               fieldName,
-              context => {
+              ({ getDataFromParsedResolveInfoFragment }) => {
                 return {
                   description: `Subscribes mutations on \`${tableTypeName}\`.`,
                   type: PayloadType,
                   subscribe: () => pubSub.asyncIterator(`postgraphile:${tableName}`),
-                  resolve: (data) => {
+                  async resolve(data, args, context, resolveInfo) {
+                    if (data.mutationType !== 'DELETED') {
+                      const parsedResolveInfoFragment = parseResolveInfo(
+                        resolveInfo
+                      );
+                      const resolveData = getDataFromParsedResolveInfoFragment(
+                        parsedResolveInfoFragment,
+                        tableType
+                      );
+                      const query = queryFromResolveData(
+                        sqlFullTableName,
+                        undefined,
+                        resolveData,
+                        {},
+                        queryBuilder => {
+                          const keys = data.uniqueConstraint.keyAttributes;
+                          keys.forEach(key => {
+                            queryBuilder.where(
+                              sql.fragment`${queryBuilder.getTableAlias()}.${sql.identifier(
+                                key.name
+                              )} = ${gql2pg(
+                                args[inflection.column(key)],
+                                key.type,
+                                key.typeModifier
+                              )}`
+                            );
+                          });
+                        }
+                      );
+                      const { text, values } = sql.compile(query);
+                      const {
+                        rows: [row],
+                      } = await context.pgClient.query(text, values);
+                      data.currentRecord = row;
+                    } else {
+                      data.currentRecord = null;
+                    }
+                    data.changedFields = (data.currentRecord && data.previousRecord) ?
+                      Object.keys(currentRecord).filter(k => data.currentRecord[k] !== data.previousRecord[k]) : []
+                    delete data.uniqueConstraint;
+                    delete data.uniqueKey;
+                    
                     return data
                   },
                 };

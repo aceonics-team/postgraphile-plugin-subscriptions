@@ -11,24 +11,14 @@ const PgMutationTriggersPlugin = (builder) => {
         isPgCreateMutationField,
         isPgUpdateMutationField,
         isPgDeleteMutationField,
-      },
-      addArgDataGenerator,
+      }
     } = hookContext;
 
     if (!isRootMutation) {
       return field;
     }
 
-    const uniqueKeyColumns = [];
-    const uniqueConstraints = table.constraints.filter(
-      con => con.type === "u" || con.type === "p"
-    );
-
-    uniqueConstraints.forEach(constraint => {
-      constraint.keyAttributes.forEach(key => uniqueKeyColumns.push(key.name));
-    });
-
-    let mutationType, previousRecord, currentRecord;
+    let mutationType, previousRecord, uniqueConstraint, uniqueKey;
 
     if (isPgCreateMutationField) {
       mutationType = 'CREATED';
@@ -40,14 +30,9 @@ const PgMutationTriggersPlugin = (builder) => {
       return field;
     }
 
-    addArgDataGenerator(() => ({
-      pgQuery: queryBuilder => {
-        queryBuilder.select(
-          sql.query`${queryBuilder.getTableAlias()}.id`,
-          '__RelatedNodeId',
-        );
-      },
-    }));
+    const uniqueConstraints = table.constraints.filter(
+      con => con.type === "u" || con.type === "p"
+    );
 
     const oldResolve = field.resolve;
 
@@ -55,52 +40,43 @@ const PgMutationTriggersPlugin = (builder) => {
       ...field,
 
       async resolve(_mutation, args, context, info) {
+        uniqueConstraints.forEach(constraint => {
+          constraint.keyAttributes.forEach(key => {
+            if (args.input[key.name]) {
+              uniqueConstraint = constraint;
+              uniqueKey = key.name;
+            }
+          });
+        });
+
         if (isPgCreateMutationField) {
           previousRecord = null;
         } else {
-          let queryColumn;
-          uniqueKeyColumns.forEach(key => {
-            if (args.input[key]) {
-              queryColumn = key;
-            }
-          });
           const { rows: [row] } = await context.pgClient.query(
             // TODO: Check if we can avoid using * in query
-            `select * from ${table.namespaceName}.${table.name} where ${queryColumn} = $1`,
-            [args.input[queryColumn]]
+            `select * from ${table.namespaceName}.${table.name} where ${uniqueKey} = $1`,
+            [args.input[uniqueKey]]
           );
           previousRecord = row;
         }
 
         const oldResolveResult = await oldResolve(_mutation, args, context, info);
-        const relatedNodeId = oldResolveResult.data.__RelatedNodeId;
-
-        if (isPgDeleteMutationField) {
-          currentRecord = null;
-        } else {
-          const { rows: [row] } = await context.pgClient.query(
-            // TODO: Check if we can avoid using * in query
-            `select * from ${table.namespaceName}.${table.name} where id = $1`,
-            [relatedNodeId]
-          );
-          currentRecord = row;
-        }
-
+        
         const payload = {
           clientMutationId: args.input.clientMutationId,
           mutationType,
-          relatedNodeId,
-          currentRecord,
           previousRecord,
-          changedFields: (currentRecord && previousRecord) ?
-            Object.keys(currentRecord).filter(k => currentRecord[k] !== previousRecord[k]) : []
+          uniqueConstraint,
+          uniqueKey
         };
 
         // TODO: Check whether creating multiple channels for filter is correct approach or not
         pubSub.publish(`postgraphile:${table.name}`, payload);
         if (!isPgCreateMutationField) {
-          uniqueKeyColumns.forEach(key => {
-            pubSub.publish(`postgraphile:${table.name}:${key}:${previousRecord[key]}`, payload);
+          uniqueConstraints.forEach(constraint => {
+            constraint.keyAttributes.forEach(key => {
+              pubSub.publish(`postgraphile:${table.name}:${key.name}:${previousRecord[key.name]}`, payload);
+            });
           });
         }
 
