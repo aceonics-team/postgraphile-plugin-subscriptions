@@ -1,7 +1,6 @@
 const { makePluginByCombiningPlugins } = require("graphile-utils");
 const PgSubscriptionTypesPlugin = require('./PgSubscriptionTypesPlugin');
 const PgSubscriptionInflectionPlugin = require('./PgSubscriptionInflectionPlugin');
-// const PgOnMutationPayloadPlugin = require('./PgOnMutationPayloadPlugin');
 const PgMutationTriggersPlugin = require('./PgMutationTriggersPlugin');
 const PgSubscriptionAllRowsPlugin = require('./PgSubscriptionAllRowsPlugin');
 const PgSubscriptionRowByUniqueConstraintPlugin = require('./PgSubscriptionRowByUniqueConstraintPlugin');
@@ -9,7 +8,6 @@ const PgSubscriptionRowByUniqueConstraintPlugin = require('./PgSubscriptionRowBy
 const PgSubscriptionsPlugin = makePluginByCombiningPlugins(
   PgSubscriptionTypesPlugin,
   PgSubscriptionInflectionPlugin,
-  // PgOnMutationPayloadPlugin,
   PgMutationTriggersPlugin,
   PgSubscriptionAllRowsPlugin,
   PgSubscriptionRowByUniqueConstraintPlugin

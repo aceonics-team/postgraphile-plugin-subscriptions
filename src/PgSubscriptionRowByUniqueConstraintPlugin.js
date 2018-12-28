@@ -8,7 +8,8 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
       pgIntrospectionResultsByKind,
       pgGetGqlInputTypeByTypeIdAndModifier,
       graphql: {
-        GraphQLNonNull
+        GraphQLNonNull,
+        GraphQLList
       },
       inflection,
     } = build;
@@ -39,36 +40,68 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
             constraint
           );
 
+          const args = keys.reduce((memo, key) => {
+            const InputType = pgGetGqlInputTypeByTypeIdAndModifier(
+              key.typeId,
+              key.typeModifier
+            );
+            if (!InputType) {
+              throw new Error(
+                `Could not find input type for key '${
+                key.name
+                }' on type '${TableType.name}'`
+              );
+            }
+            memo[inflection.column(key)] = {
+              type: new GraphQLNonNull(InputType),
+            };
+            return memo;
+          }, {});
+
+          args['mutation_in'] = {
+            description: `All input for the \`${tableTypeName}\` subscription.`,
+            type: new GraphQLList(getTypeByName('MutationType')),
+          }
+
           memo[fieldName] = fieldWithHooks(
             fieldName,
             context => {
               return {
                 description: `Subscribes mutations on \`${tableTypeName}\`.`,
                 type: getTypeByName(`${tableTypeName}SubscriptionPayload`),
-                args: keys.reduce((memo, key) => {
-                  const InputType = pgGetGqlInputTypeByTypeIdAndModifier(
-                    key.typeId,
-                    key.typeModifier
-                  );
-                  if (!InputType) {
-                    throw new Error(
-                      `Could not find input type for key '${
-                      key.name
-                      }' on type '${TableType.name}'`
-                    );
-                  }
-                  memo[inflection.column(key)] = {
-                    type: new GraphQLNonNull(InputType),
-                  };
-                  return memo;
-                }, {}),
-                subscribe: (...subscribeParams) => {
-                  const RESOLVE_ARGS_INDEX = 1;
-                  const args = subscribeParams[
-                    RESOLVE_ARGS_INDEX
+                args,
+                subscribe: (...subscriptionParams) => {
+                  const SUBSCRIBE_ARGS_INDEX = 1;
+                  const args = subscriptionParams[
+                    SUBSCRIBE_ARGS_INDEX
                   ];
-                  const keyName = keys[0].name;
-                  return pubSub.asyncIterator(`postgraphile:${tableName}:${keyName}:${args[keyName]}`, 'hello');
+                  if (!mutation_in.length) {
+                    mutation_in.push('CREATED', 'UPDATED', 'DELETED');
+                  }
+                  const topics = [];
+                  mutation_in.forEach(mutationType => {
+                    topics.push(`postgraphile:${mutationType}:${table.name}`)
+                  });
+
+                  return pubSub.asyncIterator(topics);
+                },
+                subscribe: (...subscriptionParams) => {
+                  const SUBSCRIBE_ARGS_INDEX = 1;
+                  const args = subscriptionParams[
+                    SUBSCRIBE_ARGS_INDEX
+                  ];
+                  if (!args.mutation_in || !args.mutation_in.length) {
+                    args.mutation_in = [];
+                    args.mutation_in.push('CREATED', 'UPDATED', 'DELETED');
+                  }
+                  const topics = [];
+                  args.mutation_in.forEach(mutationType => {
+                    keys.forEach(key => {
+                      topics.push(`postgraphile:${mutationType.toLowerCase()}:${tableName}:${key.name}:${args[key.name]}`)
+                    });
+                  });
+
+                  return pubSub.asyncIterator(topics);
                 },
                 resolve: (data) => {
                   // TODO: Check if we can skip returning data depending on filters, 

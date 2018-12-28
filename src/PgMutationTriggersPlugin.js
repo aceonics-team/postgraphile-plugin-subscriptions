@@ -59,7 +59,7 @@ const PgMutationTriggersPlugin = (builder) => {
         }
 
         const oldResolveResult = await oldResolve(_mutation, args, context, info);
-        
+
         const payload = {
           clientMutationId: args.input.clientMutationId,
           mutationType,
@@ -68,12 +68,11 @@ const PgMutationTriggersPlugin = (builder) => {
           uniqueKey
         };
 
-        // TODO: Check whether creating multiple channels for filter is correct approach or not
-        pubSub.publish(`postgraphile:${table.name}`, payload);
+        pubSub.publish(`postgraphile:${mutationType.toLowerCase()}:${table.name}`, payload);
         if (!isPgCreateMutationField) {
           uniqueConstraints.forEach(constraint => {
             constraint.keyAttributes.forEach(key => {
-              pubSub.publish(`postgraphile:${table.name}:${key.name}:${previousRecord[key.name]}`, payload);
+              pubSub.publish(`postgraphile:${mutationType.toLowerCase()}:${table.name}:${key.name}:${previousRecord[key.name]}`, payload);
             });
           });
         }

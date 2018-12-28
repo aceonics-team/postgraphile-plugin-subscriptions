@@ -12,6 +12,7 @@ const PgSubscriptionByEventPlugin = (builder) => {
       gql2pg,
       pgSql: sql,
       graphql: {
+        GraphQLInputObjectType,
         GraphQLObjectType,
         GraphQLString,
         GraphQLList,
@@ -46,48 +47,47 @@ const PgSubscriptionByEventPlugin = (builder) => {
           {
             name: `${tableTypeName}SubscriptionPayload`,
             description: `The output of our \`${tableTypeName}\` subscription.`,
-            fields: () => {
-              return {
-                clientMutationId: {
-                  description:
-                    "The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.",
-                  type: GraphQLString,
-                  resolve(data) {
-                    return data.clientMutationId;
-                  },
+            fields: {
+              clientMutationId: {
+                description:
+                  "The exact same `clientMutationId` that was provided in the mutation input, unchanged and unused. May be used by a client to track mutations.",
+                type: GraphQLString,
+                resolve(data) {
+                  return data.clientMutationId;
                 },
-                mutation: {
-                  description: 'Type of mutation occured',
-                  type: new GraphQLNonNull(getTypeByName('MutationType')),
-                  resolve(data) {
-                    return data.mutationType;
-                  },
+              },
+              mutation: {
+                description: 'Type of mutation occured',
+                type: new GraphQLNonNull(getTypeByName('MutationType')),
+                resolve(data) {
+                  return data.mutationType;
                 },
-                [tableName]: {
-                  description: `The current value of \`${tableTypeName}\`.`,
-                  type: tableType,
-                  resolve(data) {
-                    return data.currentRecord;
-                  },
+              },
+              [tableName]: {
+                description: `The current value of \`${tableTypeName}\`.`,
+                type: tableType,
+                resolve(data) {
+                  return data.currentRecord;
                 },
-                previousValues: {
-                  description: `The previous value of \`${tableTypeName}\`.`,
-                  type: tableType,
-                  resolve(data) {
-                    return data.previousRecord;
-                  },
+              },
+              previousValues: {
+                description: `The previous value of \`${tableTypeName}\`.`,
+                type: tableType,
+                resolve(data) {
+                  return data.previousRecord;
                 },
-                changedFields: {
-                  description: `List of fields changed in mutation of \`${tableTypeName}\`.`,
-                  type: new GraphQLNonNull(new GraphQLList(getTypeByName('String'))),
-                  resolve(data) {
-                    return data.changedFields;
-                  }
+              },
+              changedFields: {
+                description: `List of fields changed in mutation of \`${tableTypeName}\`.`,
+                type: new GraphQLNonNull(new GraphQLList(getTypeByName('String'))),
+                resolve(data) {
+                  return data.changedFields;
                 }
-              };
+              }
             },
           },
           {
+            isPgSubscriptionAllRowsPayloadType: true,
             pgIntrospection: table,
           },
         );
@@ -100,8 +100,29 @@ const PgSubscriptionByEventPlugin = (builder) => {
               ({ getDataFromParsedResolveInfoFragment }) => {
                 return {
                   description: `Subscribes mutations on \`${tableTypeName}\`.`,
+                  args: {
+                    mutation_in: {
+                      description: `All input for the \`${tableTypeName}\` subscription.`,
+                      type: new GraphQLList(getTypeByName('MutationType')),
+                    }
+                  },
                   type: PayloadType,
-                  subscribe: () => pubSub.asyncIterator(`postgraphile:${tableName}`),
+                  subscribe: (...subscriptionParams) => {
+                    const SUBSCRIBE_ARGS_INDEX = 1;
+                    const args = subscriptionParams[
+                      SUBSCRIBE_ARGS_INDEX
+                    ];
+                    if (!args.mutation_in || !args.mutation_in.length) {
+                      args.mutation_in = [];
+                      args.mutation_in.push('CREATED', 'UPDATED', 'DELETED');
+                    }
+                    const topics = [];
+                    args.mutation_in.forEach(mutationType => {
+                      topics.push(`postgraphile:${mutationType.toLowerCase()}:${table.name}`)
+                    });
+
+                    return pubSub.asyncIterator(topics);
+                  },
                   async resolve(data, args, context, resolveInfo) {
                     if (data.mutationType !== 'DELETED') {
                       const parsedResolveInfoFragment = parseResolveInfo(
@@ -143,12 +164,13 @@ const PgSubscriptionByEventPlugin = (builder) => {
                       Object.keys(currentRecord).filter(k => data.currentRecord[k] !== data.previousRecord[k]) : []
                     delete data.uniqueConstraint;
                     delete data.uniqueKey;
-                    
+
                     return data
                   },
                 };
               },
               {
+                isPgSubscriptionAllRows: true,
                 pgFieldIntrospection: table,
               },
             ),
