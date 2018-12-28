@@ -1,9 +1,9 @@
 # Postgraphile Subscription Plugin
 
-This plugin adds a subscription by default per table in your postGraphile schema; e.g.
-`user` table gets subscription as `onUserMutation`. This plugin is not dependent on `@graphile/supporter` or `@graphile/pro` package. It uses `graphql-subscriptions` internally. 
+This plugin adds subscriptions by default per table in your postGraphile schema; e.g.
+`user` table gets subscription as `onAllUsersMutation` and depending on primary/unique keys `onUserMutationById` && `onUserMutationByEmail`. This plugin is not dependent on `@graphile/supporter` or `@graphile/pro` package. It uses `graphql-subscriptions` internally. 
 
-Currently it can be used with apollo-server, as it has in built subscriptions. Check out example for more info. 
+Postgraphile does not have build-in subscriptions so currently this plugin can be used with apollo-server, as it has built-in subscriptions. Check out example for more info. 
 
 This is currently in alpha stage and has few issues which would resolved in near future.
 
@@ -11,10 +11,11 @@ This is currently in alpha stage and has few issues which would resolved in near
 With each mutation on table subscription returns following graphql result
 * clientMutationId: Exact clientMutationId used while performing mutation.
 * mutation: Type or mutation, value can be CREATED, UPDATED or DELETED.
-* relatedNodeId: Id field of record on which mutation occured.
 * node: Updated values for record after performing mutation.
 * previousValues: Previous values for record before performing mutation. 
 * changedFields: List of column names affected due to mutation.
+* Allows subscribing to single record
+* Allows subscribing to specific mutation. 
 
 ## Install
 For npm
@@ -86,10 +87,9 @@ main().catch(e => {
 Subscribe to onUserMutation
 ```
 subscription {
-  onUserMutation {
+  onAllUsersMutation {
     clientMutationId
     mutation
-    relatedNodeId
     user {
       id
       firstName
@@ -138,7 +138,6 @@ Subscription Output
     "onUserMutation": {
       "clientMutationId": "my_custom_mutation_id",
       "mutation": "UPDATED",
-      "relatedNodeId": "e673ad33-dbd7-45a7-b272-3fefa25b4cba",
       "user": {
         "id": "e673ad33-dbd7-45a7-b272-3fefa25b4cba",
         "firstName": "John",
@@ -161,6 +160,92 @@ Subscription Output
         "updatedAt"
       ]
     }
+  }
+}
+```
+
+### Subscribing to specific record
+```
+subscription {
+  onUserMutationByEmail(email:"jen@example.com") {
+   clientMutationId
+    mutation
+    user {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    previousValues {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    changedFields 
+  }
+}
+```
+
+### Subscribing to specific events
+```
+subscription {
+  onUserMutationByEmail(mutation_in: [
+    CREATED
+    UPDATED
+  ]) {
+   clientMutationId
+    mutation
+    user {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    previousValues {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    changedFields 
+  }
+}
+```
+
+### Subscribing to specific events of specific record
+```
+subscription {
+  onUserMutationByEmail(id: "e673ad33-dbd7-45a7-b272-3fefa25b4cba", mutation_in: [
+    UPDATED
+  ]) {
+   clientMutationId
+    mutation
+    user {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    previousValues {
+      id
+      firstName
+      lastName
+      email
+      updatedAt
+      createdAt
+    }
+    changedFields 
   }
 }
 ```
