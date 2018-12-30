@@ -1,6 +1,6 @@
 {
   "name": "postgraphile-plugin-subscriptions",
-  "version": "1.0.0-alpha.3",
+  "version": "1.0.0-alpha.4",
   "description": "Postgraphile plugin for adding subscriptions by default for all tables.",
   "main": "index.js",
   "repository": {
