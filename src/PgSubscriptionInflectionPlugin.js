@@ -31,7 +31,35 @@ const PgSubscriptionInflectionPlugin = (builder) => {
               .map(key => this.column(key))
               .join("-and-")}`
           );
-        }
+        },
+        subscribeAllRowsInputType(table) {
+          return this.upperCamelCase(
+            `subscribe-all-${this.pluralize(this._singularizedTableName(table))}-input`
+          );
+        },
+        subscribeRowInputType(table) {
+          return this.upperCamelCase(
+            `subscribe-${this._singularizedTableName(table)}-input`
+          );
+        },
+        subscribeRowByUniqueKeysInputType(detailedKeys,
+          table,
+          constraint
+        ) {
+          if (constraint.tags.fieldName) {
+            return constraint.tags.fieldName;
+          }
+          return this.camelCase(
+            `subscribe-${this._singularizedTableName(table)}-by-${detailedKeys
+              .map(key => this.column(key))
+              .join("-and-")}-input`
+          );
+        },
+        subscribePayloadType(table) {
+          return this.upperCamelCase(
+            `subscribe-${this._singularizedTableName(table)}-payload`
+          );
+        },
       }
     );
   });

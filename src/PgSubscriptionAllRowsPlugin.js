@@ -12,6 +12,7 @@ const PgSubscriptionByEventPlugin = (builder) => {
       gql2pg,
       pgSql: sql,
       graphql: {
+        GraphQLInputObjectType,
         GraphQLObjectType,
         GraphQLString,
         GraphQLList,
@@ -36,15 +37,35 @@ const PgSubscriptionByEventPlugin = (builder) => {
         const tableTypeName = inflection.tableType(table);
         const tableType = pgGetGqlTypeByTypeIdAndModifier(table.type.id, null);
         const fieldName = inflection.allSubscriptionRows(table);
+        const inputName = inflection.subscribeAllRowsInputType(table);
+        const payloadName = inflection.subscribePayloadType(table);
         const sqlFullTableName = sql.identifier(
           table.namespace.name,
           table.name
         );
 
-        const PayloadType = newWithHooks(
+        const inputType = newWithHooks(
+          GraphQLInputObjectType,
+          {
+            name: inputName,
+            description: `Input for subscribing mutations on \`${tableTypeName}\`.`,
+            fields: {
+              mutation_in: {
+                description: `All input for the \`${tableTypeName}\` subscription.`,
+                type: new GraphQLList(getTypeByName('MutationType')),
+              }
+            }
+          },
+          {
+            isPgSubscriptionAllRowsInputType: true,
+            pgInflection: table,
+          }
+        );
+
+        const payloadType = newWithHooks(
           GraphQLObjectType,
           {
-            name: `${tableTypeName}SubscriptionPayload`,
+            name: payloadName,
             description: `The output of our \`${tableTypeName}\` subscription.`,
             fields: {
               clientMutationId: {
@@ -99,24 +120,23 @@ const PgSubscriptionByEventPlugin = (builder) => {
               ({ getDataFromParsedResolveInfoFragment }) => {
                 return {
                   description: `Subscribes mutations on \`${tableTypeName}\`.`,
+                  type: payloadType,
                   args: {
-                    mutation_in: {
-                      description: `All input for the \`${tableTypeName}\` subscription.`,
-                      type: new GraphQLList(getTypeByName('MutationType')),
+                    input: {
+                      type: inputType
                     }
                   },
-                  type: PayloadType,
                   subscribe: (...subscriptionParams) => {
                     const SUBSCRIBE_ARGS_INDEX = 1;
-                    const args = subscriptionParams[
+                    const { input } = subscriptionParams[
                       SUBSCRIBE_ARGS_INDEX
                     ];
-                    if (!args.mutation_in || !args.mutation_in.length) {
-                      args.mutation_in = [];
-                      args.mutation_in.push('CREATED', 'UPDATED', 'DELETED');
+                    if (!input.mutation_in || !input.mutation_in.length) {
+                      input.mutation_in = [];
+                      input.mutation_in.push('CREATED', 'UPDATED', 'DELETED');
                     }
                     const topics = [];
-                    args.mutation_in.forEach(mutationType => {
+                    input.mutation_in.forEach(mutationType => {
                       topics.push(`postgraphile:${mutationType.toLowerCase()}:${table.name}`)
                     });
 

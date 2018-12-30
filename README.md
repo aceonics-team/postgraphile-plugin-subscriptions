@@ -170,7 +170,9 @@ Subscription Output
 This will trigger only if user with email "jen@example.com" is updated or deleted.
 ```
 subscription {
-  onUserMutationByEmail(email:"jen@example.com") {
+  onUserMutationByEmail(input: { 
+    email:"jen@example.com" 
+  }) {
    clientMutationId
     mutation
     user {
@@ -198,10 +200,12 @@ subscription {
 This will trigger if any user is created or updated, but not if deleted.
 ```
 subscription {
-  onUserMutationByEmail(mutation_in: [
-    CREATED
-    UPDATED
-  ]) {
+  onUserMutationByEmail(input: { 
+    mutation_in: [
+      CREATED
+      UPDATED
+    ]
+  }) {
    clientMutationId
     mutation
     user {
@@ -229,9 +233,12 @@ subscription {
 This will only trigger when user with id "e673ad33-dbd7-45a7-b272-3fefa25b4cba" is updated.
 ```
 subscription {
-  onUserMutationByEmail(id: "e673ad33-dbd7-45a7-b272-3fefa25b4cba", mutation_in: [
-    UPDATED
-  ]) {
+  onUserMutationByEmail(input: {
+    id: "e673ad33-dbd7-45a7-b272-3fefa25b4cba", 
+    mutation_in: [
+      UPDATED
+    ]
+  }) {
    clientMutationId
     mutation
     user {
