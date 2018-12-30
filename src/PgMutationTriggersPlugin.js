@@ -60,12 +60,24 @@ const PgMutationTriggersPlugin = (builder) => {
 
         const oldResolveResult = await oldResolve(_mutation, args, context, info);
 
+        // TODO: Remove this when subscription can query
+        let currentRecord;
+        if (!isPgDeleteMutationField) {
+          const { rows: [row] } = await context.pgClient.query(
+            // TODO: Check if we can avoid using * in query
+            `select * from ${table.namespaceName}.${table.name} where ${uniqueKey} = $1`,
+            [args.input[uniqueKey]]
+          );
+          currentRecord = row;
+        }
+
         const payload = {
           clientMutationId: args.input.clientMutationId,
           mutationType,
           previousRecord,
-          uniqueConstraint,
-          uniqueKey
+          currentRecord
+          // uniqueConstraint,
+          // uniqueKey
         };
 
         pubSub.publish(`postgraphile:${mutationType.toLowerCase()}:${table.name}`, payload);

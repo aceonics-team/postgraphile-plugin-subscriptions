@@ -104,8 +104,6 @@ const PgSubscriptionByUniqueConstraintPlugin = (builder) => {
                   return pubSub.asyncIterator(topics);
                 },
                 resolve: (data) => {
-                  // TODO: Check if we can skip returning data depending on filters, 
-                  // instead of creating separate channel per filter as done now for id
                   return data
                 },
               };
