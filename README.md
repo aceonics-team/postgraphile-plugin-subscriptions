@@ -1,4 +1,5 @@
 # Postgraphile Subscription Plugin
+## Please Note, This plugin is no longer maintained as postgraphile supports subscriptions and live queries out of box.
 
 This plugin adds subscriptions by default per table in your postGraphile schema; e.g.
 `user` table gets subscription as `onAllUsersMutation` and depending on primary/unique keys `onUserMutationById` && `onUserMutationByEmail`. This plugin is not dependent on `@graphile/supporter` or `@graphile/pro` package. It uses `graphql-subscriptions` internally. 
