@@ -18,7 +18,7 @@
   },
   "dependencies": {
     "@graphile/operation-hooks": "^0.2.0",
-    "apollo-server": "^2.3.1",
+    "apollo-server": "^2.14.2",
     "dotenv": "^6.2.0",
     "graphile-utils": "^4.2.0",
     "graphql": "^14.0.2",
